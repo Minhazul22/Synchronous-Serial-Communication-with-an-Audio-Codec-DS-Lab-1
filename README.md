@@ -1,8 +1,22 @@
 # Synchronous Serial Communication with an Audio Codec (FPGA / VHDL)
 
+
 This project implements a **synchronous serial audio communication interface** between an FPGA and an external **PCM3006 audio codec**. The system is developed in **VHDL**, simulated and verified in **AMD Xilinx Vivado**, and deployed on a **Xilinx Artix-7 FPGA (ModSys 2.0 board)**.
 
 ---
+
+## 🎓 Academic Context
+
+This project was developed as part of a laboratory course at:
+
+**Hochschule für Angewandte Wissenschaften Hamburg (HAW Hamburg)**  
+Course: *Digitale Systeme / Digital Systems Laboratory*  
+Instructor: **Prof. Dr.-Ing. Lutz Leutelt**
+
+The implementation presented in this repository is an **independent student solution**, based on the lab assignment requirements.
+
+---
+
 
 ## 📌 Objectives
 
