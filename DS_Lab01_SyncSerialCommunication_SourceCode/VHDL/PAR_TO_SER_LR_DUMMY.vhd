@@ -42,10 +42,25 @@ end process;
 P2S_COMBIN: process(SHIFT_REG) -- modify sensitivity list as needed
 begin
 
-   -- delete the two dummy lines and replace section by your code --
-   SHIFT_REG_NEXT <= not SHIFT_REG after 2 ns;		
-   SER_OUT <= SHIFT_REG(0) after 2 ns;
-   -----------------------------------------------------------------
+  -- default: keep current value
+    SHIFT_REG_NEXT <= SHIFT_REG after 2 ns;
+
+    -- LOAD LEFT CHANNEL
+    if SAVE_R_LOAD_L = '1' then
+        SHIFT_REG_NEXT <= PAR_IN_L after 2 ns;
+
+    -- LOAD RIGHT CHANNEL
+    elsif SAVE_L_LOAD_R = '1' then
+        SHIFT_REG_NEXT <= PAR_IN_R after 2 ns;
+
+    -- SHIFT OPERATION
+    else
+        SHIFT_REG_NEXT <= SHIFT_REG(W-2 downto 0) & '0' after 2 ns;
+    end if;
+
+    -- OUTPUT (MSB first)
+    SER_OUT <= SHIFT_REG(W-1) after 2 ns;
+
    
 end process;
 
