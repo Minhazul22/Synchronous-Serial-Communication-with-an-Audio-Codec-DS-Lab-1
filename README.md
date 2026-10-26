@@ -1,161 +1,115 @@
-# Synchronous Serial Communication with an Audio Codec (FPGA / VHDL)
+# FPGA Audio CODEC Interface — Synchronous Serial Communication
 
+A VHDL-based FPGA laboratory project implementing synchronous serial audio data transfer between a Xilinx Artix-7 FPGA and a PCM3006 audio codec.
 
-This project implements a **synchronous serial audio communication interface** between an FPGA and an external **PCM3006 audio codec**. The system is developed in **VHDL**, simulated and verified in **AMD Xilinx Vivado**, and deployed on a **Xilinx Artix-7 FPGA (ModSys 2.0 board)**.
+The project focuses on clock generation, serial/parallel data conversion, finite-state-machine-based timing control, simulation, and hardware-level signal verification.
 
----
+## Project at a Glance
 
-## 🎓 Academic Context
+| Item | Details |
+|---|---|
+| Design language | VHDL |
+| FPGA platform | Xilinx Artix-7 (XC7A100T) |
+| Development environment | AMD Xilinx Vivado |
+| Audio codec | PCM3006 |
+| Board | ModSys 2.0 |
+| Interface focus | Synchronous serial audio |
+| Academic context | Digital Systems Laboratory, HAW Hamburg |
 
-This project was developed as part of a laboratory course at:
+## Objectives
 
-**Hochschule für Angewandte Wissenschaften Hamburg (HAW Hamburg)**  
-Course: *Digitale Systeme / Digital Systems Laboratory*  
-Instructor: **Prof. Dr.-Ing. Lutz Leutelt**
+- Design and verify a synchronous serial interface between an FPGA and an external audio codec.
+- Generate the clock signals required by the codec interface.
+- Convert serial audio data to parallel samples and parallel samples back to serial data.
+- Use finite state machine (FSM) control to coordinate transfers and left/right channel timing.
+- Inspect simulated waveforms and use laboratory measurement equipment to investigate timing and signal behavior.
 
-The implementation presented in this repository is an **independent student solution**, based on the lab assignment requirements.
+## System Overview
 
----
+The FPGA exchanges digital audio data with the PCM3006 codec. The codec handles conversion between analog audio and digital samples; the FPGA-side logic coordinates clocks and serial data movement.
 
+The documented clock signals are:
 
-## 📌 Objectives
+- **SYSCLK** — codec system/oversampling clock, intended to run at 256 times the sampling rate.
+- **BCK** — bit clock for serial data transfer, intended to run at 32 times the sampling rate.
+- **LRC** — left/right channel and sampling reference clock, approximately 48 kHz in this design.
 
-- Develop a **serial communication interface** to an external digital module (audio codec)
-- Design and implement a **parallel-to-serial converter (VHDL)**
-- Use **finite state machines (FSM)** for timing control
-- Understand **audio sampling synchronization**
-- Perform **simulation, synthesis, and FPGA testing**
-- Analyze timing behavior using an **oscilloscope**
+The clocks are derived from a 100 MHz system clock using frequency division. Actual frequencies should be confirmed against the implementation and measured waveforms.
 
----
+## Architecture
 
-## 🧠 System Overview
+The existing design documentation identifies these functional blocks:
 
-The FPGA communicates with the **PCM3006 audio codec** using a synchronous serial protocol. The system operates with three derived clock signals:
+- **`CODEC_CLK_GEN`** — frequency divider that generates SYSCLK, BCK, and LRC.
+- **`AUDIO_CDC_FSM`** — FSM that coordinates data-transfer timing.
+- **`SER_TO_PAR_LR`** — converts incoming serial data into 16-bit samples.
+- **`PAR_TO_SER_LR`** — converts 16-bit parallel samples into serial output; identified in the lab documentation as the main implemented module.
+- **Audio processing / pass-through path** — forwards input samples to the output in the documented configuration.
 
-- **SYSCLK** – Oversampling clock (256 × sampling rate)
-- **BCK (Bit Clock)** – Serial data clock (32 × sampling rate)
-- **LRC (Left/Right Clock)** – Sampling clock (~48 kHz)
+### Data path
 
-All clocks are generated from a **100 MHz system clock** using frequency division.
+1. The codec samples an analog input and supplies digital serial data to the FPGA.
+2. The FPGA receives and assembles serial data into parallel samples.
+3. The design forwards or processes the samples.
+4. The FPGA serializes the output samples for the codec.
+5. The codec converts the digital output back to an analog signal.
 
----
+## Verification Approach
 
-## 🔧 Architecture
+The project documentation describes simulation and bench-level checks, including:
 
-The design consists of the following modules:
+- Simulating the provided system testbench and custom tests for the parallel-to-serial converter.
+- Inspecting waveforms for bit shifting and left/right channel synchronization.
+- Observing DIN and DOUT alongside BCK and LRC.
+- Measuring clock periods, timing relationships, and the delay between analog input and output using an oscilloscope.
 
-- **Frequency Divider (`CODEC_CLK_GEN`)**
-  - Generates SYSCLK, BCK, and LRC
+**Results note:** This README summarizes the verification activities described for the project. Add captured waveforms, measured values, and test outcomes to the repository when the corresponding evidence is available.
 
-- **Finite State Machine (`AUDIO_CDC_FSM`)**
-  - Controls timing of data transfer and sampling
+## Hardware Setup
 
-- **Serial-to-Parallel Converter (`SER_TO_PAR_LR`)**
-  - Converts incoming serial data into 16-bit samples
+The documented setup uses:
 
-- **Parallel-to-Serial Converter (`PAR_TO_SER_LR`)**
-  - Converts 16-bit parallel data into serial output  
-  - ✅ *Main module implemented in this project*
+- An Artix-7 FPGA on the ModSys 2.0 board
+- A PCM3006 audio codec connected through the expansion hardware
+- A function generator for the input signal
+- An oscilloscope for signal and timing measurements
+- Vivado for simulation, synthesis, and FPGA programming
 
-- **Audio Processing Module**
-  - Currently forwards input directly to output
+Follow the original lab instructions and board-specific pin constraints when reproducing the setup. Hardware results depend on the exact board connections, constraints, clock configuration, and codec setup.
 
----
+## Getting Started
 
-## 🔄 Data Flow
+1. Clone or download this repository.
+2. Open the project in a compatible version of AMD Xilinx Vivado.
+3. Review the VHDL sources, constraints, and supplied testbench.
+4. Run the simulation and inspect the clock and serial-data waveforms.
+5. Synthesize and implement the design for the target FPGA.
+6. Program the board and perform hardware measurements only after checking the lab setup and pin assignments.
 
-1. Analog signal enters codec via **LINE IN**
-2. Codec converts signal → digital serial data
-3. FPGA:
-   - Receives serial input (`DIN`)
-   - Converts to parallel samples
-   - Processes or forwards data
-   - Converts back to serial (`DOUT`)
-4. Codec converts signal back → analog output (**LINE OUT**)
+Exact commands and project-opening steps depend on the files and Vivado version included with the project.
 
----
+## Limitations and Design Notes
 
-## 🧪 Simulation & Verification
+- The sampling frequency is documented as approximately 48 kHz because the clock is derived by integer frequency division; verify the actual value from the implemented divider and measurements.
+- The documented parallel-to-serial converter uses a single shift register for both channels. Review the RTL and timing carefully when evaluating channel handling.
+- The audio path is described as pass-through, so output differences may include codec conversion effects, quantization, and analog hardware behavior.
 
-- Full system simulation using provided **testbench**
-- Custom test cases for **parallel-to-serial converter**
-- Waveform analysis in Vivado to verify:
-  - Bit shifting correctness
-  - Channel synchronization (Left/Right)
-  - Timing behavior
+## Skills Demonstrated
 
----
+- VHDL RTL design and digital hardware reasoning
+- Synchronous serial communication
+- Clock division and timing relationships
+- FSM-based control
+- Serial-to-parallel and parallel-to-serial conversion
+- FPGA simulation and implementation workflow
+- Waveform inspection and hardware measurement
 
-## ⚙️ Hardware Implementation
+## Repository Contents
 
-- **FPGA:** Xilinx Artix-7 (XC7A100T)
-- **Board:** ModSys 2.0
-- **Toolchain:** AMD Xilinx Vivado
-- **Audio Codec:** PCM3006
+Browse the source files, testbench, constraints, and any available lab materials in this repository. File names and reproduction instructions should be updated here if the project structure changes.
 
-### Setup
+## Academic Context
 
-- FPGA programmed via JTAG
-- Audio codec connected via expansion board
-- Input signal generated using function generator
-- Signals analyzed using oscilloscope
+Developed as part of the Digital Systems Laboratory at Hochschule für Angewandte Wissenschaften Hamburg (HAW Hamburg). This repository represents a student laboratory implementation based on the assignment requirements.
 
----
-
-## 📊 Experiments
-
-### Analog Signal Test
-- Input sinusoidal signals (1 kHz – 30 kHz)
-- Observe output signal behavior and distortion
-
-### Digital Signal Analysis
-- Capture DIN/DOUT with BCK and LRC
-- Decode 16-bit samples for left and right channels
-
-### Timing Verification
-- Measure:
-  - Bit clock period
-  - Setup and hold times
-  - Signal delays
-
-### System Delay
-- Measure delay between LINE IN and LINE OUT
-- Analyze contributions from FPGA and codec
-
----
-
-## 📈 Results
-
-- Successful serial communication with audio codec
-- Correct synchronization of sampling and bit transfer
-- Accurate analog signal reconstruction
-- Timing verified using oscilloscope
-
----
-
-## 📎 Notes
-
-- Sampling frequency is approximate (~48 kHz) due to clock division limits
-- Parallel-to-serial converter uses a **single shift register for both channels**
-- Output signal initially matches input (except quantization effects)
-
----
-
-## 🚀 Getting Started
-
-1. Open project in **Vivado**
-2. Run simulation using provided testbench
-3. Implement and verify `PAR_TO_SER_LR.vhd`
-4. Synthesize and program FPGA
-5. Test using function generator and oscilloscope
-
----
-
-## 📚 Learning Outcomes
-
-- VHDL-based hardware design
-- Serial communication protocols
-- FSM-based timing control
-- FPGA development workflow
-- Real-world signal measurement and debugging
+Before redistributing course handouts, instructor-provided source files, or other course materials, check the university's sharing rules. Do not include material you are not permitted to publish.
